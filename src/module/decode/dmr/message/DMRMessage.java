@@ -18,7 +18,6 @@
  ******************************************************************************/
 package module.decode.dmr.message;
 
-import bits.BinaryMessage;
 import bits.CorrectedBinaryMessage;
 import message.Message;
 
