@@ -23,6 +23,7 @@ import java.util.BitSet;
 public class CorrectedBinaryMessage extends BinaryMessage
 {
     private int mCorrectedBitCount;
+    private boolean mCorrected;
 
     /**
      * Subclass of binary message class to allow capturing a corrected bits metric.
@@ -70,5 +71,21 @@ public class CorrectedBinaryMessage extends BinaryMessage
     public void addCorrectedBitCount(int count)
     {
         mCorrectedBitCount += count;
+    }
+
+    /**
+     * Indicates if this message has been corrected.
+     */
+    public boolean isCorrected()
+    {
+        return mCorrected;
+    }
+
+    /**
+     * Sets the status of this message to indicate if this message has been corrected or not.
+     */
+    public void setCorrected(boolean corrected)
+    {
+        mCorrected = corrected;
     }
 }
