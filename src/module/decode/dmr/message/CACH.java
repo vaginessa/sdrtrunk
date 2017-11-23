@@ -23,44 +23,83 @@ import bits.CorrectedBinaryMessage;
 
 public class CACH
 {
-    private static final int CACH_MESSAGE_LENGTH = 24;
-    private static final int[] INTERLEAVE_MATRIX =
-        new int[]{0,4,8,12,14,18,22,1,2,3,5,6,7,9,10,11,13,15,16,17,19,20,21,23};
-    private static final int INBOUND_CHANNEL_ACCESS_TYPE = 0;
-    private static final int OUTBOUND_BURST_TIMESLOT = 1;
-    private static final int[] LINK_CONTROL_START_STOP = new int[]{2,3};
-    private static final int[] CACH_CRC = new int[]{4,5,6};
-    private static final int[] CHECKSUMS = new int[]{5,7,6,3};
-    private static final int PAYLOAD_START = 7;
-    private static final int PAYLOAD_END = 23;
+    private static final int AT_INBOUND_TIMESLOT_STATUS = 0;
+    private static final int TC_TIMESLOT = 4;
+    private static final int[] LINK_CONTROL_START_STOP = new int[]{8,12};
+    private static final int[] HAMMING_WORD = new int[]{0,4,8,12,14,18,22};
+    private static final int[] HAMMING_CRC = new int[]{14,18,22};
+    private static final int[] HAMMING_7_4_3_CRC = new int[]{5,7,6,3,4,2,1};
+    private static final int[] PAYLOAD_INDEXES = new int[]{1,2,3,5,6,7,9,10,11,13,15,16,17,19,20,21,23};
 
-    public enum AccessType {IDLE, BUSY};
+    public enum TimeslotStatus {IDLE, BUSY};
 
     private CorrectedBinaryMessage mMessage;
-    private BinaryMessage mDecodedMessage;
+    private BinaryMessage mPayloadMessage;
 
     /**
-     * Common Announcement Channel is a 24-bit sequence that preceeds an outbound DMR frame transmitted by a repeater.
-     * @param message containing an initial 24 bits representing a CACH sequence.
+     * Common Announcement Channel is a 24-bit sequence that precedes an outbound DMR frame transmitted by a repeater.
+     * @param message containing a complete transmitted DMR frame where the initial 24 bits contain the transmitted
+     * CACH frame.  Note: any error correction information will be added to this original corrected message.
      */
     public CACH(CorrectedBinaryMessage message)
     {
         mMessage = message;
+        errorCheck();
     }
 
     /**
-     * Indicates the state of the next inbound channel timeslot, IDLE or BUSY
+     * Performs error detection and correction over the Hamming(7,4,3) protected information bits and crc.
      */
-    public AccessType getInboundChannelAccessType()
+    private void errorCheck()
     {
-        if(getDecodedMessage().get(INBOUND_CHANNEL_ACCESS_TYPE))
+        int checksum = 0;
+
+        for(int x = 0; x < 4; x++)
         {
-            return AccessType.BUSY;
+            if(mMessage.get(HAMMING_WORD[x]))
+            {
+                checksum ^= HAMMING_7_4_3_CRC[x];
+            }
+        }
+
+        int crc = mMessage.getInt(HAMMING_CRC);
+
+        checksum ^= crc;
+
+        if(checksum != 0)
+        {
+            for(int x = 0; x < HAMMING_7_4_3_CRC.length; x++)
+            {
+                if(checksum == HAMMING_7_4_3_CRC[x])
+                {
+                    mMessage.flip(HAMMING_WORD[x]);
+                    mMessage.setCorrectedBitCount(mMessage.getCorrectedBitCount() + 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Indicates the state of the next inbound frame for this timeslot, IDLE or BUSY
+     */
+    public TimeslotStatus getInboundTimeslotStatus()
+    {
+        if(mMessage.get(AT_INBOUND_TIMESLOT_STATUS))
+        {
+            return TimeslotStatus.BUSY;
         }
         else
         {
-            return AccessType.IDLE;
+            return TimeslotStatus.IDLE;
         }
+    }
+
+    /**
+     * Indicates if the next inbound frame for this timeslot is busy
+     */
+    public boolean isBusy()
+    {
+        return getInboundTimeslotStatus() == TimeslotStatus.BUSY;
     }
 
     /**
@@ -68,98 +107,52 @@ public class CACH
      */
     public LCSS getLCSS()
     {
-        return LCSS.fromValue(getDecodedMessage().getInt(LINK_CONTROL_START_STOP));
+        return LCSS.fromValue(mMessage.getInt(LINK_CONTROL_START_STOP));
     }
 
     /**
-     * Indicates the outbound timeslot for the next frame that follows this CACH, 0 or 1
+     * Indicates the timeslot that follows this CACH frame
      */
     public int getTimeslot()
     {
-        return getDecodedMessage().get(OUTBOUND_BURST_TIMESLOT) ? 1 : 0;
+        return mMessage.get(TC_TIMESLOT) ? 1 : 0;
     }
 
     /**
-     * Binary Payload (17-bit) message fragment
+     * Binary Payload (17-bit) message fragment.  Note: the payload represents 1/4 of a Short Link Control (SLC) frame,
+     * therefore four CACH frames must be assembled to form a complete SLC message where the first frame has an LCSS
+     * start indicator followed by two LCSS continuation frames and an LCSS final/last frame.
      */
     public BinaryMessage getPayload()
     {
-        return getDecodedMessage().getSubMessage(PAYLOAD_START, PAYLOAD_END);
-    }
-
-    /**
-     * Deinterleaved and error corrected CACH message
-     */
-    public BinaryMessage getDecodedMessage()
-    {
-        if(mDecodedMessage == null)
+        if(mPayloadMessage == null)
         {
-            mDecodedMessage = new BinaryMessage(CACH_MESSAGE_LENGTH);
+            mPayloadMessage = new BinaryMessage(17);
 
-            //Deinterleave the transmitted message to create the decoded message
-            for(int x = 0; x < CACH_MESSAGE_LENGTH; x++)
+            for(int x = 0; x < PAYLOAD_INDEXES.length; x++)
             {
-                if(mMessage.get(INTERLEAVE_MATRIX[x]))
+                if(mMessage.get(PAYLOAD_INDEXES[x]))
                 {
-                    mDecodedMessage.set(x);
-                }
-            }
-
-            //Perform error detection
-            int checksum = mDecodedMessage.getInt(CACH_CRC);
-
-            for(int x = 0; x < 4; x++)
-            {
-                if(mDecodedMessage.get(x))
-                {
-                    checksum ^= CHECKSUMS[x];
-                }
-            }
-
-            //Perform error correction in primary message
-            if(checksum != 0)
-            {
-                for(int x = 0; x < 4; x++)
-                {
-                    if(checksum == CHECKSUMS[x])
-                    {
-                        if(mDecodedMessage.get(x))
-                        {
-                            mDecodedMessage.clear(x);
-                        }
-                        else
-                        {
-                            mDecodedMessage.set(x);
-                        }
-
-                        checksum ^= CHECKSUMS[x];
-
-                        mMessage.addCorrectedBitCount(1);
-                    }
-                }
-            }
-
-            //Perform error correction on CRC bits for single-bit errors
-            if(checksum != 0)
-            {
-                if(checksum == 4)
-                {
-                    mDecodedMessage.clear(4);
-                    mMessage.addCorrectedBitCount(1);
-                }
-                else if(checksum == 2)
-                {
-                    mDecodedMessage.clear(5);
-                    mMessage.addCorrectedBitCount(1);
-                }
-                else if(checksum == 1)
-                {
-                    mDecodedMessage.clear(6);
-                    mMessage.addCorrectedBitCount(1);
+                    mPayloadMessage.set(x);
                 }
             }
         }
 
-        return mDecodedMessage;
+        return mPayloadMessage;
+    }
+
+    /**
+     * String representation of the parsed CACH
+     */
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("CACH");
+        sb.append(" TS:").append(getTimeslot());
+        sb.append(" IN:").append(getInboundTimeslotStatus().name());
+        sb.append(" ").append(getLCSS()).append(getPayload().toHexString());
+
+        return sb.toString();
     }
 }

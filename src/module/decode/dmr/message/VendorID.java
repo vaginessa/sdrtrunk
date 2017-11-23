@@ -20,12 +20,31 @@ package module.decode.dmr.message;
 
 public enum VendorID
 {
-    STANDARD(0),
-    MOTOROLA_IP_SITE_CONNECT(6),
-    MOTOROLA_CAPACITY_PLUS(16),
-    UNKNOWN(-1);
+    STANDARD(0x00, "STANDARD"),
+    RESERVED_1(0x01, "RESERVED 1"),
+    RESERVED_2(0x02, "RESERVED 2"),
+    RESERVED_3(0x03, "RESERVED 3"),
+    FYLDE_MICRO(0x04, "FYLDE MICRO"),
+    PROD_EL_SPA_SELEX_MILAN(0x05, "SELEX ECOS-D"),
+    TRIDENT_MICRO_SYSTEMS(6, "MOTOROLA IPSC"),
+    RADIO_DATA_GMBH(0x07, "RADIO DATA"),
+    HYTERA_SCIENCE_TECH_08(0x08, "HYTERA 08"),
+    ASELSAN_ELEKTRONIK(0x09, "ASELSAN"),
+    KIRISUN(0x0A, "KIRISUN"),
+    DMR_ASSOCIATION(0x0B, "DMR ASSOC"),
+    MOTOROLA_CAPACITY_PLUS(0x10, "MOTOROLA CAP+"),
+    ELECTRONIC_MARKETING_COMPANY_13(0x13, "EMC 13"),
+    ELECTRONIC_MARKETING_COMPANY_1C(0x1C, "EMC 1C"),
+    JVC_KENWOOD(0x20, "JVC-KENWOOD"),
+    RADIO_ACTIVITY_33(0x33, "RADIO ACTIVITY 33"),
+    RADIO_ACTIVITY_3C(0x3C, "RADIO ACTIVITY 3C"),
+    TAIT(0x58, "TAIT"),
+    HYTERA_SCIENCE_TECH_68(0x68, "HYTERA 68"),
+    VERTEX_STANDARD(0x77, "VERTEX STANDARD"),
+    UNKNOWN(-1, "UNKNOWN");
 
     private int mIdentifier;
+    private String mLabel;
 
     /**
      * Vendor Identifier.  Note: this is referred to as the Manufacturer Feature Identifier (MFID) in the DMR
@@ -35,9 +54,10 @@ public enum VendorID
      *
      * @param identifier value that represents the vendor-specific message implementation
      */
-    VendorID(int identifier)
+    VendorID(int identifier, String label)
     {
         mIdentifier = identifier;
+        mLabel = label;
     }
 
     /**
@@ -49,6 +69,14 @@ public enum VendorID
     }
 
     /**
+     * Overrides the string value for this entry
+     */
+    public String toString()
+    {
+        return mLabel;
+    }
+
+    /**
      * Lookup the vendor ID enum entry from the Feature Set identifier
      * @param identifier or FID
      * @return entry or UNKNOWN if the identifier does not match the listed enumerations.
@@ -57,12 +85,48 @@ public enum VendorID
     {
         switch(identifier)
         {
-            case 0:
+            case 0x00:
                 return STANDARD;
-            case 6:
-                return MOTOROLA_IP_SITE_CONNECT;
-            case 16:
+            case 0x01:
+                return RESERVED_1;
+            case 0x02:
+                return RESERVED_2;
+            case 0x03:
+                return RESERVED_3;
+            case 0x04:
+                return FYLDE_MICRO;
+            case 0x05:
+                return PROD_EL_SPA_SELEX_MILAN;
+            case 0x06:
+                return TRIDENT_MICRO_SYSTEMS;
+            case 0x07:
+                return RADIO_DATA_GMBH;
+            case 0x08:
+                return HYTERA_SCIENCE_TECH_08;
+            case 0x09:
+                return ASELSAN_ELEKTRONIK;
+            case 0x0A:
+                return KIRISUN;
+            case 0x0B:
+                return DMR_ASSOCIATION;
+            case 0x10:
                 return MOTOROLA_CAPACITY_PLUS;
+            case 0x13:
+                return ELECTRONIC_MARKETING_COMPANY_13;
+            case 0x1C:
+                return ELECTRONIC_MARKETING_COMPANY_1C;
+            case 0x20:
+                return JVC_KENWOOD;
+            case 0x33:
+                return RADIO_ACTIVITY_33;
+            case 0x3C:
+                return RADIO_ACTIVITY_3C;
+            case 0x58:
+                return TAIT;
+            case 0x68:
+                return HYTERA_SCIENCE_TECH_68;
+            case 0x77:
+                return VERTEX_STANDARD;
             default:
                 return UNKNOWN;
         }

@@ -25,6 +25,7 @@ public abstract class DMRMessage extends Message
 {
     private DMRSyncPattern mSyncPattern;
     private CorrectedBinaryMessage mMessage;
+    private CACH mCACH;
 
     /**
      * DMR message frame.  This message is comprised of a 24-bit prefix and a 264-bit message frame.  Outbound base
@@ -37,6 +38,28 @@ public abstract class DMRMessage extends Message
     {
         mSyncPattern = syncPattern;
         mMessage = message;
+    }
+
+    /**
+     * Common Announcement Channel (CACH) message frame.  Note: check hasCACH() before accessing this method.
+     * @return CACH frame or null if this message does not contain a CACH.
+     */
+    public CACH getCACH()
+    {
+        if(hasCACH() && mCACH == null)
+        {
+            mCACH = new CACH(mMessage);
+        }
+
+        return mCACH;
+    }
+
+    /**
+     * Indicates if this frame contains Common Announcement Channel (CACH) frame data.
+     */
+    public boolean hasCACH()
+    {
+        return getSyncPattern().hasCACH();
     }
 
     @Override
@@ -56,7 +79,7 @@ public abstract class DMRMessage extends Message
     /**
      * The original message as captured over the wire with initial error detection and correction applied.
      */
-    public CorrectedBinaryMessage getOriginalMessage()
+    public CorrectedBinaryMessage getTransmittedMessage()
     {
         return mMessage;
     }

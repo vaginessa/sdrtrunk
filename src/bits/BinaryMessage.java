@@ -283,6 +283,29 @@ public class BinaryMessage extends BitSet
     }
 
     /**
+     * Hexadecimal representation of the message.
+     */
+    public String toHexString()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        int offset = (size() % 4);
+
+        if(offset > 0)
+        {
+            sb.append(getHex(0,offset - 1, 1));
+        }
+
+        while((offset + 3) < size())
+        {
+            sb.append(getHex(offset, offset + 3, 1));
+            offset += 4;
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Returns this bitset as an array of integer ones and zeros
      */
     public int[] toIntegerArray()
@@ -889,15 +912,4 @@ public class BinaryMessage extends BitSet
 		
 		this.xor( mask );
 	}
-
-	public static void main(String[] args)
-    {
-        BinaryMessage b = new BinaryMessage(32);
-
-        int[] indices = {2,3,7,8};
-
-        b.setInt(0xF, indices);
-
-        System.out.println(b.toString());
-    }
 }

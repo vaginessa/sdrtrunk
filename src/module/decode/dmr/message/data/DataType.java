@@ -16,33 +16,45 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  ******************************************************************************/
-package module.decode.dmr.message;
+package module.decode.dmr.message.data;
 
-import bits.CorrectedBinaryMessage;
-
-public abstract class OutboundDMRMessage extends DMRMessage
+public enum DataType
 {
-    private CACH mCACH;
+    PRIVACY_INICATOR_HEADER(0),
+    VOICE_LINK_CONTROL_HEADER(1),
+    TERMINATOR_WITH_LINK_CONTROL(2),
+    CSBK(3),
+    MULTI_BLOCK_CONTROL_HEADER(4),
+    MULTI_BLOCK_CONTROL_CONTINUATION(5),
+    DATA_HEADER(6),
+    RATE_1_2_DATA(7),
+    RATE_3_4_DATA(8),
+    IDLE(9),
+    RATE_1_DATA(10),
+    UNIFIED_SINGLE_BLOCK_DATA(11),
+    RESERVED_12(12),
+    RESERVED_13(13),
+    RESERVED_14(14),
+    RESERVED_15(15),
+    UNKNOWN(-1);
 
-    /**
-     * Outbound DMR message frame transmitted by a repeater.  This message is comprised of a 24-bit Common Announcement
-     * Channel and a 264-bit message frame.
-     *
-     * @param syncPattern
-     * @param message containing 288-bit DMR message with preliminary bit corrections indicated.
-     */
-    public OutboundDMRMessage(DMRSyncPattern syncPattern, CorrectedBinaryMessage message)
+    private int mValue;
+
+    DataType(int value)
     {
-        super(syncPattern, message);
+        mValue = value;
     }
 
-    public CACH getCACH()
+    /**
+     * Lookup the data type from the value.
+     */
+    public static DataType fromValue(int value)
     {
-        if(mCACH == null)
+        if(0 <= value && value <= 15)
         {
-            mCACH = new CACH(getOriginalMessage());
+            return DataType.values()[value];
         }
 
-        return mCACH;
+        return UNKNOWN;
     }
 }

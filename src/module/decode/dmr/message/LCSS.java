@@ -20,31 +20,27 @@ package module.decode.dmr.message;
 
 public enum LCSS
 {
-    /**
-     * Link Control(LC) Single Fragment -or- CSBK Signalling First Fragment
-     */
-    SINGLE_FRAGMENT,
+    SINGLE_FRAGMENT("[FL]"),
+    FIRST_FRAGMENT("[F-]"),
+    LAST_FRAGMENT("[-L]"),
+    CONTINUATION_FRAGMENT("[--]"),
+    UNKNOWN("[??]");
+
+    private String mLabel;
 
     /**
-     * LC First Fragment
+     * Link Control(LC) Start/Stop indicator.  Used to identify the starting, continuation and last frames in a frame
+     * sequence
      */
-    FIRST_FRAGMENT,
+    LCSS(String label)
+    {
+        mLabel = label;
+    }
 
     /**
-     * LC or CSBK Last Fragment
+     * Lookup the LCSS entry from the value
+     * @param value (0 - 3)
      */
-    LAST_FRAGMENT,
-
-    /**
-     * LC or CSBK Continuation Fragment
-     */
-    CONTINUATION_FRAGMENT,
-
-    /**
-     * Unknown Fragment
-     */
-    UNKNOWN;
-
     public static LCSS fromValue(int value)
     {
         if(0 <= value && value <= 4)
@@ -53,5 +49,13 @@ public enum LCSS
         }
 
         return UNKNOWN;
+    }
+
+    /**
+     * String representation of the entry
+     */
+    public String toString()
+    {
+        return mLabel;
     }
 }
