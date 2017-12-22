@@ -23,6 +23,10 @@ import message.Message;
 
 public abstract class DMRMessage extends Message
 {
+    public static final int PAYLOAD_1_START = 24;
+    public static final int SYNC_START = 132;
+    public static final int PAYLOAD_2_START = 180;
+
     private DMRSyncPattern mSyncPattern;
     private CorrectedBinaryMessage mMessage;
     private CACH mCACH;
